@@ -105,5 +105,5 @@ func filterMergedPRs(prs []*github.PullRequest) []*github.PullRequest {
 
 // Formats the shoutouts in a consistent format.
 func printShoutout(pr *github.PullRequest) {
-	fmt.Printf("- [@%s](%s): [%s](%s)\n", *pr.User.Login, *pr.User.URL, *pr.Title, *pr.URL)
+	fmt.Printf("- [@%s](%s): [%s](%s)\n", *pr.User.Login, *pr.User.HTMLURL, *pr.Title, *pr.HTMLURL)
 }
