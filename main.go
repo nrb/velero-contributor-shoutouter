@@ -18,6 +18,7 @@ func main() {
 		"velero-plugin-for-aws",
 		"velero-plugin-for-gcp",
 		"velero-plugin-for-microsoft-azure",
+		"helm-charts",
 	}
 
 	var prs []*github.PullRequest
@@ -91,8 +92,7 @@ func filterMergedPRs(prs []*github.PullRequest) []*github.PullRequest {
 		if pr.MergedAt != nil {
 			diff := time.Now().Sub(*pr.MergedAt)
 			days := diff.Hours() / 24
-			// Use 10 days as a buffer for long weekends
-			if days <= 10 {
+			if days <= 7 {
 				filtered = append(filtered, pr)
 			}
 		}
