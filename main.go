@@ -64,6 +64,7 @@ func filterPRsByAuthor(prs []*github.PullRequest) []*github.PullRequest {
 		"michmike",
 		"nrb",
 		"zubron",
+		"dsu-igeek",
 	}
 
 	var filtered []*github.PullRequest
