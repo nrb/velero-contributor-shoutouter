@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	log "github.com/sirupsen/logrus"
 
@@ -14,17 +15,38 @@ import (
 // Values within a Project are strings used to query the GitHub API.
 type ProjectConfig struct {
 	// Name of the project to find contributors.
-	Name string
+	Name string `json:"name,omitempty"`
 	// Name of the GitHub organization which the repositories are in.
-	OrgName string
+	OrgName string `json:"org"`
 	// List of Repositories that should be considered within the project.
-	RepoNames []string
+	RepoNames []string `json:"repos,omitempty"`
 	// List of core developer accounts names that will be excluded. Will be merged with teams.
-	DevNames []string
+	DevNames []string `json:"devs,omitempty"`
 	// GitHub Teams to extract members from that will be exluded. Members will be merged with developers.
-	TeamNames []string
+	TeamNames []string `json:"teams"`
 	// Token is a GitHub Token that is able to read the GitHub repositories.
 	Token string
+}
+
+var NoOrgError = fmt.Errorf("Please populate an organization")
+var NoTeamError = fmt.Errorf("Please specify one or more teams")
+var NoTokenError = fmt.Errorf("Please provide a Github API Token")
+
+// validateConfig makes sure the minimum fields are populated in order to query GitHub.
+func (c *ProjectConfig) Validate() error {
+	if c.OrgName == "" {
+		return NoOrgError
+	}
+
+	if len(c.TeamNames) == 0 {
+		return NoTeamError
+	}
+
+	if c.Token == "" {
+		return NoTokenError
+	}
+
+	return nil
 }
 
 type Project struct {
