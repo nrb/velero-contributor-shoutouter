@@ -52,6 +52,28 @@ func main() {
 	for _, r := range p.Repos {
 		fmt.Printf("%s\n", *r.Name)
 	}
+
+	fmt.Println()
+	fmt.Println("---- PRs ----")
+	err = p.GetPullRequests()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("PRs Found: %d\n", len(p.PullRequests))
+
+	i := 0
+	emptyTime := time.Time{}
+	for _, pr := range p.PullRequests {
+		if pr.GetMergedAt() != emptyTime {
+			if fromMember(pr, p) {
+				continue
+			}
+			i++
+			printShoutout(pr)
+		}
+	}
+
+	fmt.Printf("PRs merged from non-core memembers: %d\n", i)
 }
 
 func init() {
@@ -155,4 +177,13 @@ func filterMergedPRs(prs []*github.PullRequest) []*github.PullRequest {
 // Formats the shoutouts in a consistent format.
 func printShoutout(pr *github.PullRequest) {
 	fmt.Printf("- [@%s](%s): [%s](%s)\n", *pr.User.Login, *pr.User.HTMLURL, *pr.Title, *pr.HTMLURL)
+}
+
+func fromMember(pr *github.PullRequest, p *Project) bool {
+	for _, m := range p.Devs {
+		if pr.GetUser().GetLogin() == m.GetLogin() {
+			return true
+		}
+	}
+	return false
 }

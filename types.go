@@ -103,7 +103,6 @@ func (p *Project) GetPullRequests() error {
 			return err
 		}
 	}
-	// TODO: pagination options
 	opts := &github.PullRequestListOptions{State: "closed",
 		ListOptions: github.ListOptions{
 			PerPage: 100,
