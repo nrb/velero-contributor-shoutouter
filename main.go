@@ -2,46 +2,63 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
-	"log"
+	"os"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/google/go-github/v32/github"
 )
 
 func main() {
-	client := github.NewClient(nil)
+	token := flag.String("token", "", "--token {GITHUB_TOKEN}")
+	debug := flag.Bool("debug", false, "--debug to print debug lines")
 
-	// Only our repos.
-	repos := []string{
-		"velero",
-		"velero-plugin-for-aws",
-		"velero-plugin-for-gcp",
-		"velero-plugin-for-microsoft-azure",
-		"helm-charts",
+	flag.Parse()
+
+	if *debug {
+		log.SetLevel(log.DebugLevel)
 	}
 
-	var prs []*github.PullRequest
+	if *token == "" {
+		fmt.Println("Please provide a GitHub API token with --token.")
+		os.Exit(1)
+	}
 
-	// Get them all.
-	for _, r := range repos {
-		p, err := getPRs(client, r)
-		if err != nil {
-			log.Fatalf("Error getting PRs for repo %s: %s", r, err.Error())
+	// TODO: ensure we have an org name
+	tce := NewProject(
+		&ProjectConfig{
+			Name:    "tce",
+			OrgName: "vmware-tanzu",
+			TeamNames: []string{
+				"tce-owners",
+			},
+			Token: *token,
+		},
+	)
+
+	err := tce.GetDevs()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, d := range tce.Devs {
+		if d != nil {
+			fmt.Printf("Login: %s, Name: %s\n", d.GetLogin(), d.GetName())
 		}
-		prs = append(prs, p...)
-
 	}
 
-	// Filter out any PRs by us.
-	prs = filterPRsByAuthor(prs)
+	err = tce.GetReposFromTeam()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// Only show PRs merged in the last week.
-	prs = filterMergedPRs(prs)
-
-	// Print them.
-	for _, pr := range prs {
-		printShoutout(pr)
+	fmt.Println()
+	fmt.Println("---- REPOS ----")
+	for _, r := range tce.Repos {
+		fmt.Printf("%s\n", *r.Name)
 	}
 }
 
