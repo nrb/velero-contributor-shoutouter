@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 
 	log "github.com/sirupsen/logrus"
 
 	"github.com/google/go-github/v32/github"
 	"golang.org/x/oauth2"
+	"gopkg.in/yaml.v2"
 )
 
 // ProjectConfig is a representation of an umbrella project to thank contributors on.
@@ -15,17 +17,34 @@ import (
 // Values within a Project are strings used to query the GitHub API.
 type ProjectConfig struct {
 	// Name of the project to find contributors.
-	Name string `json:"name,omitempty"`
+	Name string `yaml:"name,omitempty"`
 	// Name of the GitHub organization which the repositories are in.
-	OrgName string `json:"org"`
+	OrgName string `yaml:"org"`
 	// List of Repositories that should be considered within the project.
-	RepoNames []string `json:"repos,omitempty"`
+	RepoNames []string `yaml:"repos,omitempty"`
 	// List of core developer accounts names that will be excluded. Will be merged with teams.
-	DevNames []string `json:"devs,omitempty"`
+	DevNames []string `yaml:"devs,omitempty"`
 	// GitHub Teams to extract members from that will be exluded. Members will be merged with developers.
-	TeamNames []string `json:"teams"`
+	TeamNames []string `yaml:"teams"`
 	// Token is a GitHub Token that is able to read the GitHub repositories.
-	Token string
+	Token string `yaml:"token"`
+}
+
+func NewConfigFromFile(path string) (*ProjectConfig, error) {
+	log.Debugf("Opening file %s\n", path)
+	bytes, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var config ProjectConfig
+	log.Debug("Parsing config from bytes")
+	err = yaml.Unmarshal(bytes, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &config, nil
 }
 
 var NoOrgError = fmt.Errorf("Please populate an organization")

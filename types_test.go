@@ -44,3 +44,15 @@ func TestValidateToken(t *testing.T) {
 	c.Token = "asdf"
 	assert.NoError(t, c.Validate())
 }
+
+func TestNewConfigFromFileSucceeds(t *testing.T) {
+	c, err := NewConfigFromFile("testdata/good_example.yaml")
+	assert.Nil(t, err)
+	assert.NoError(t, c.Validate())
+}
+
+func TestNewConfigFromFileMissingTeams(t *testing.T) {
+	c, err := NewConfigFromFile("testdata/missing_teams.yaml")
+	assert.NoError(t, err)
+	assert.Equal(t, NoTeamError, c.Validate())
+}
