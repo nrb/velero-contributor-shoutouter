@@ -97,13 +97,31 @@ func NewProject(c *ProjectConfig) *Project {
 
 // GetPullRequests will get all pull requests across all of a project's repositories.
 func (p *Project) GetPullRequests() error {
-	opts := &github.PullRequestListOptions{State: "closed"}
-	for _, r := range p.Config.RepoNames {
-		prs, _, err := p.client.PullRequests.List(context.Background(), p.Config.OrgName, r, opts)
-		if err != nil {
+
+	if len(p.Repos) == 0 {
+		if err := p.GetReposFromTeam(); err != nil {
 			return err
 		}
-		p.PullRequests = append(p.PullRequests, prs...)
+	}
+	// TODO: pagination options
+	opts := &github.PullRequestListOptions{State: "closed",
+		ListOptions: github.ListOptions{
+			PerPage: 100,
+		},
+	}
+	for _, r := range p.Repos {
+		for {
+			prs, response, err := p.client.PullRequests.List(context.Background(), p.Config.OrgName, r.GetName(), opts)
+			if err != nil {
+				return err
+			}
+			log.Debugf("Found these closed PRs: %v", prs)
+			p.PullRequests = append(p.PullRequests, prs...)
+			if response.NextPage == 0 {
+				break
+			}
+			opts.Page = response.NextPage
+		}
 	}
 	return nil
 }
