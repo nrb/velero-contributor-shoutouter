@@ -49,7 +49,7 @@ func NewConfigFromFile(path string) (*ProjectConfig, error) {
 
 var NoOrgError = fmt.Errorf("Please populate an organization")
 var NoTeamError = fmt.Errorf("Please specify one or more teams")
-var NoTokenError = fmt.Errorf("Please provide a Github API Token")
+var NoTokenError = fmt.Errorf("Please provide a Github API Token. You can make one with the proper permissions via this link: https://github.com/settings/tokens/new?description=shoutouts&scopes=read:org")
 
 // validateConfig makes sure the minimum fields are populated in order to query GitHub.
 func (c *ProjectConfig) Validate() error {
