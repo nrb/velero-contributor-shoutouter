@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"os"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -12,54 +11,88 @@ import (
 	"github.com/google/go-github/v32/github"
 )
 
+type args struct {
+	debug                    bool
+	config, token, team, org string
+}
+
+var a *args
+
 func main() {
-	token := flag.String("token", "", "--token {GITHUB_TOKEN}")
-	debug := flag.Bool("debug", false, "--debug to print debug lines")
 
-	flag.Parse()
-
-	if *debug {
-		log.SetLevel(log.DebugLevel)
-	}
-
-	if *token == "" {
-		fmt.Println("Please provide a GitHub API token with --token.")
-		os.Exit(1)
-	}
-
-	// TODO: ensure we have an org name
-	tce := NewProject(
-		&ProjectConfig{
-			Name:    "tce",
-			OrgName: "vmware-tanzu",
-			TeamNames: []string{
-				"tce-owners",
-			},
-			Token: *token,
-		},
-	)
-
-	err := tce.GetDevs()
+	c, err := makeConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for _, d := range tce.Devs {
+	if err := c.Validate(); err != nil {
+		log.Fatal(err)
+	}
+
+	p := NewProject(c)
+
+	err = p.GetDevs()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, d := range p.Devs {
 		if d != nil {
 			fmt.Printf("Login: %s, Name: %s\n", d.GetLogin(), d.GetName())
 		}
 	}
 
-	err = tce.GetReposFromTeam()
+	err = p.GetReposFromTeam()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Println()
 	fmt.Println("---- REPOS ----")
-	for _, r := range tce.Repos {
+	for _, r := range p.Repos {
 		fmt.Printf("%s\n", *r.Name)
 	}
+}
+
+func init() {
+	a = &args{}
+	flag.StringVar(&a.config, "config", "", "--config file.yaml")
+	flag.StringVar(&a.token, "token", "", "--token ${GITHUB_API_TOKEN}")
+	flag.StringVar(&a.org, "org", "", "--org ${GITHUB_ORG_NAME}")
+	flag.StringVar(&a.team, "team", "", "--team ${GITHUB_TEAM_NAME}")
+	flag.BoolVar(&a.debug, "debug", false, "--debug for detailed logging")
+
+	flag.Parse()
+
+	if a.debug {
+		log.SetLevel(log.DebugLevel)
+	}
+}
+
+func makeConfig() (*ProjectConfig, error) {
+	var err error
+	c := &ProjectConfig{}
+
+	if a != nil && a.config != "" {
+		c, err = NewConfigFromFile(a.config)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	if a != nil && a.org != "" {
+		c.OrgName = a.org
+	}
+
+	if a.team != "" {
+		c.TeamNames = append(c.TeamNames, a.team)
+	}
+
+	if a.token != "" {
+		c.Token = a.token
+	}
+
+	return c, nil
 }
 
 func getPRs(client *github.Client, repo string) ([]*github.PullRequest, error) {
