@@ -13,6 +13,7 @@ import (
 type args struct {
 	debug                    bool
 	config, token, team, org string
+	days                     int
 }
 
 var a *args
@@ -37,7 +38,7 @@ func main() {
 
 	for _, d := range p.Devs {
 		if d != nil {
-			fmt.Printf("Login: %s\n", d.GetLogin())
+			log.Debug("Login: %s\n", d.GetLogin())
 		}
 	}
 
@@ -46,24 +47,32 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println()
-	fmt.Println("---- REPOS ----")
+	log.Debug("---- REPOS ----")
 	for _, r := range p.Repos {
-		fmt.Printf("%s\n", *r.Name)
+		log.Debug("%s\n", *r.Name)
 	}
 
-	fmt.Println()
-	fmt.Println("---- PRs ----")
+	log.Debug("---- PRs ----")
 	err = p.GetPullRequests()
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("PRs Found: %d\n", len(p.PullRequests))
+	log.Debug("PRs Found: %d\n", len(p.PullRequests))
 
 	i := 0
 	emptyTime := time.Time{}
 	for _, pr := range p.PullRequests {
+
 		if pr.GetMergedAt() != emptyTime {
+			// Skip PRs older than specified dates
+			// this works for now, but should probably be put in a function or method.
+			if a.days > -1 {
+				age := time.Since(pr.GetMergedAt())
+				if int(age.Hours()/24) > a.days {
+					continue
+				}
+			}
+
 			if fromMember(pr, p) {
 				continue
 			}
@@ -82,6 +91,7 @@ func init() {
 	flag.StringVar(&a.org, "org", "", "--org ${GITHUB_ORG_NAME}")
 	flag.StringVar(&a.team, "team", "", "--team ${GITHUB_TEAM_NAME}")
 	flag.BoolVar(&a.debug, "debug", false, "--debug for detailed logging")
+	flag.IntVar(&a.days, "days", -1, "--days for a window to check PRs (-1 for all (default), 30 for a month)")
 
 	flag.Parse()
 
