@@ -2,22 +2,17 @@
 
 This is a small program that will look at Pull Requests on the various Velero GitHub repositories, and assemble their titles into Markdown for acknowledgement in the weekly community meeting.
 
-To build it, run:
+To use it, run:
 
 ```shell
-    go build -o velero-shoutouts
-```
-
-Then, run it with:
-
-```shell
-    ./velero-shoutouts --config my_file.yaml --token <GITHUB API TOKEN>
+    
+    go run . --config my_file.yaml --token <GITHUB API TOKEN>
 ```
 
 Optionally, you can specify a number of days to find PRs within. To filter by PRs in the last month:
 
 ```shell
-    ./velero-shoutouts --config my_file.yaml --token <GITHUB API TOKEN> --days 30
+    go run . --config my_file.yaml --token <GITHUB API TOKEN> --days 30
 ```
 
 On macOS, you can also copy them directly to your clipboard.
